@@ -1,0 +1,55 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# =====================
+# Environment variables
+# =====================
+.env
+.env.*
+!.env.example
+
+# =====================
+# FastAPI / Flask
+# =====================
+instance/
+.webassets-cache
+
+# Flask
+*.sqlite3
+flask_session/
+
+# FastAPI / Uvicorn
+*.log
+
+# =====================
+# IDE / Editor
+# =====================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =====================
+# OS files
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Build / Cache
+# =====================
+build/
+dist/
+*.egg-info/
+.eggs/
+.cache/
