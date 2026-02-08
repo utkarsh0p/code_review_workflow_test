@@ -4,14 +4,18 @@ on:
   pull_request:
     types: [opened]
 
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
 jobs:
   send-pr:
     runs-on: ubuntu-latest
-
     steps:
       - name: Send PR data to backend
         run: |
-          curl -X POST http://3.80.154.24:8000/review \
+          curl -X POST http://YOUR_IP:8000/review \
           -H "Content-Type: application/json" \
           -d '{
             "repo": "${{ github.repository }}",
