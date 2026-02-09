@@ -52,6 +52,7 @@ async def review(request: Request):
         json={"body": comment_body},
         timeout=20
     )
+    print("this is review_summary",review_summary)
 
     return {"msg": "ok"}
 
