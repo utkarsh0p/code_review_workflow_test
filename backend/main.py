@@ -33,11 +33,24 @@ async def review(request: Request):
 
     files = response.json()
 
-    review_summary = []
+    # ✅ LLM-friendly structure
+    # Each item has: file name + its related diff
+    file_changes = []
+
     for f in files:
         if f.get("patch"):
-            review_summary.append(f"- `{f['filename']}` has changes")
+            file_changes.append({
+                "file": f["filename"],
+                "diff": f["patch"]
+            })
 
+    # Summary (only file names)
+    review_summary = [
+        f"- `{item['file']}` has changes"
+        for item in file_changes
+    ]
+
+    # GitHub PR comment (summary only)
     comment_body = (
         "🤖 **Automated PR Review**\n\n"
         "hi from utkarsh 👋\n\n"
@@ -52,10 +65,18 @@ async def review(request: Request):
         json={"body": comment_body},
         timeout=20
     )
-    print("this is review_summary",review_summary)
 
-    return {"msg": "ok"}
+    # Debug logs (see structure clearly)
+    print("FILE CHANGES (LLM READY):")
+    for item in file_changes:
+        print("FILE:", item["file"])
+        print(item["diff"])
+        print("-" * 40)
 
+    return {
+        "msg": "ok",
+        "file_changes": file_changes
+    }
 
 #line in branch2 for testing merge
 #line in branch2 for test merge
