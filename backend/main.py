@@ -20,12 +20,12 @@ async def review(request: Request):
     payload = await request.json()
     print("GITHUB PAYLOAD:", payload)
 
-    repo = payload["repo"]            # owner/repo
+    repo = payload["repo"]          # owner/repo
     pr_number = int(payload["pr_number"])
 
-    # 1️⃣ Fetch PR files (diffs)
+    # 1️⃣ Fetch PR files
     files_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
-    response = requests.get(files_url, headers=HEADERS)
+    response = requests.get(files_url, headers=HEADERS, timeout=20)
 
     if response.status_code != 200:
         print("GitHub API ERROR:", response.text)
@@ -41,35 +41,38 @@ async def review(request: Request):
             print("FILE:", f["filename"])
             print(f["patch"])
             print("------")
-
             review_summary.append(f"- `{f['filename']}` has changes")
 
-    # 2️⃣ Build comment text
+    # 2️⃣ Build comment text (FIXED)
     if review_summary:
         comment_body = (
             "🤖 **Automated PR Review**\n\n"
+            "hi from utkarsh 👋\n\n"
             "I analyzed the following files:\n\n"
             + "\n".join(review_summary)
             + "\n\n✅ Review completed."
         )
     else:
-        comment_body = "🤖 **Automated PR Review**\n\nNo code changes detected."
+        comment_body = (
+            "🤖 **Automated PR Review**\n\n"
+            "hi from utkarsh 👋\n\n"
+            "No code changes detected."
+        )
 
-    # 3️⃣ Post comment on GitHub PR
+    # 3️⃣ Post comment
     comment_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     comment_response = requests.post(
         comment_url,
         headers=HEADERS,
-        json={"body": comment_body}
+        json={"body": comment_body},
+        timeout=20
     )
 
     if comment_response.status_code != 201:
         print("Failed to post comment:", comment_response.text)
         raise HTTPException(status_code=500, detail="Failed to post PR comment")
 
-    return {
-        "msg": "Review completed and comment posted on PR"
-    }
+    return {"msg": "Review completed and comment posted on PR"}
 
 #line in branch2 for testing merge
 #line in branch2 for test merge
