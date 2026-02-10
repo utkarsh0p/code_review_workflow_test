@@ -20,5 +20,5 @@ def build_context(repo: str, headers: dict) -> dict:
     readme = fetch_readme(repo, headers)
 
     return {
-        "readme_excerpt": readme[:3000]  # hard limit
+        "readme_excerpt": readme[:100]  # hard limit
     }
