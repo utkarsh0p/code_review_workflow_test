@@ -1,7 +1,10 @@
 import os
-from dotenv import load_dotenv
 import requests
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
+
+from parse_diff import parse_diff
+from context_builder import build_context
 
 # LOAD .env FIRST
 load_dotenv()
@@ -9,7 +12,6 @@ load_dotenv()
 app = FastAPI()
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-
 if not GITHUB_TOKEN:
     raise RuntimeError("GITHUB_TOKEN not set")
 
@@ -18,6 +20,7 @@ HEADERS = {
     "Accept": "application/vnd.github+json"
 }
 
+
 @app.post("/review")
 async def review(request: Request):
     payload = await request.json()
@@ -25,6 +28,7 @@ async def review(request: Request):
     repo = payload["repo"]
     pr_number = int(payload["pr_number"])
 
+    # 1️⃣ Fetch PR files
     files_url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
     response = requests.get(files_url, headers=HEADERS, timeout=20)
 
@@ -33,54 +37,41 @@ async def review(request: Request):
 
     files = response.json()
 
-    # ✅ LLM-friendly structure
-    # Each item has: file name + its related diff
+    # 2️⃣ Parse diffs
     file_changes = []
-
     for f in files:
         if f.get("patch"):
-            file_changes.append({
-                "file": f["filename"],
-                "diff": f["patch"]
-            })
+            parsed = parse_diff(f["patch"])
+            if parsed:
+                file_changes.append({
+                    "file": f["filename"],
+                    "changes": parsed
+                })
 
-    # Summary (only file names)
-    review_summary = [
-        f"- `{item['file']}` has changes"
-        for item in file_changes
-    ]
+    # 3️⃣ Build repo context (README etc.)
+    context = build_context(repo, HEADERS)
 
-    # GitHub PR comment (summary only)
-    comment_body = (
-        "🤖 **Automated PR Review**\n\n"
-        "hi from utkarsh 👋\n\n"
-        + "\n".join(review_summary)
-        + "\n\n✅ Review completed."
-    )
+    # 4️⃣ FINAL LLM INPUT (DO NOT CALL LLM YET)
+    llm_input = {
+        "repo": repo,
+        "pull_request": {
+            "number": pr_number,
+            "title": payload.get("title", "")
+        },
+        "context": context,
+        "changes": file_changes,
+        "review_rules": {
+            "focus": ["bugs", "logic errors", "security"],
+            "ignore": ["formatting", "style", "comments"],
+            "max_comments": 5
+        }
+    }
 
-    comment_url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-    requests.post(
-        comment_url,
-        headers=HEADERS,
-        json={"body": comment_body},
-        timeout=20
-    )
-
-    # Debug logs (see structure clearly)
-    print("FILE CHANGES (LLM READY):")
-    for item in file_changes:
-        print("FILE:", item["file"])
-        print(item["diff"])
-        print("-" * 40)
+    # Debug output
+    print("===== LLM INPUT =====")
+    print(llm_input)
 
     return {
         "msg": "ok",
-        "file_changes": file_changes
+        "llm_input": llm_input
     }
-
-#line in branch2 for testing merge
-#line in branch2 for test merge
-#line branch2 for test merge again
-#checking for the pr message from the backend
-#branch3 change comment line
-#new comment
