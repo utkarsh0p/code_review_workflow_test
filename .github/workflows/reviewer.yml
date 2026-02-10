@@ -1,4 +1,4 @@
-name: Demo PR Reviewer
+name: demo pr reviewer
 
 on:
   pull_request:
@@ -13,10 +13,10 @@ jobs:
   send-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Send PR data to backend
+      - name: send pr data to backend
         run: |
-          curl -X POST http://3.80.154.24:8000/review \
-          -H "Content-Type: application/json" \
+          curl -x post http://3.80.154.24:8000/review \
+          -h "content-type: application/json" \
           -d '{
             "repo": "${{ github.repository }}",
             "pr_number": "${{ github.event.pull_request.number }}",
